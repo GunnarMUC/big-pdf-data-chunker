@@ -1,0 +1,36 @@
+<div class="job-card" data-status="{{ status }}">
+    <div class="job-header">
+        <span class="job-id">Job {{ job_id[:8] }}&hellip;</span>
+        {% if status == "processing" %}
+        <span class="job-progress-text">{{ "%.0f"|format(progress * 100) }}%</span>
+        {% elif status == "done" %}
+        <span class="job-done-text">Abgeschlossen</span>
+        {% elif status == "error" %}
+        <span class="job-error-text">Fehler</span>
+        {% endif %}
+    </div>
+    {% if status == "processing" %}
+    <div class="progress-bar">
+        <div class="progress-fill" style="width: {{ "%.0f"|format(progress * 100) }}%"></div>
+    </div>
+    <div class="job-message">{{ message }}</div>
+    <div hx-get="/status/{{ job_id }}" hx-trigger="every 2s" hx-swap="outerHTML"></div>
+    {% elif status == "done" %}
+    <div class="progress-bar">
+        <div class="progress-fill done" style="width: 100%"></div>
+    </div>
+    <div class="job-message">{{ message }}</div>
+    <a href="/download/{{ job_id }}" class="download-link" download>ZIP herunterladen</a>
+    {% elif status == "error" %}
+    <div class="progress-bar">
+        <div class="progress-fill error" style="width: 0%"></div>
+    </div>
+    <div class="error-message">{{ message }}</div>
+    {% else %}
+    <div class="progress-bar">
+        <div class="progress-fill" style="width: 0%"></div>
+    </div>
+    <div class="job-message">{{ message }}</div>
+    <div hx-get="/status/{{ job_id }}" hx-trigger="every 2s" hx-swap="outerHTML"></div>
+    {% endif %}
+</div>

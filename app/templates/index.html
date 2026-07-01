@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nebenkosten-Chunker</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Nebenkosten-Chunker</h1>
+            <p>Dokumente hochladen &mdash; automatisch in maschinenlesbare Abschnitte zerlegen</p>
+        </header>
+
+        <main>
+            <form id="upload-form"
+                  hx-encoding="multipart/form-data"
+                  hx-post="/upload"
+                  hx-target="#jobs-container"
+                  hx-swap="beforeend">
+                <div class="dropzone" id="dropzone">
+                    <div class="dropzone-content">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        <p>Dateien hier ablegen<br><span>oder klicken zum Auswählen</span></p>
+                        <p class="supported-formats">PDF &middot; DOCX &middot; XLSX &middot; PNG &middot; JPG &middot; TIFF</p>
+                    </div>
+                    <input type="file" name="files" id="file-input" multiple
+                           accept=".pdf,.docx,.xlsx,.xlsm,.png,.jpg,.jpeg,.tiff,.tif,.bmp,.webp">
+                </div>
+                <div id="file-list" class="file-list"></div>
+                <button type="submit" id="submit-btn" class="btn-primary" disabled>
+                    Hochladen &amp; Verarbeiten
+                </button>
+            </form>
+
+            <div id="jobs-container"></div>
+        </main>
+
+        <footer>
+            <p>Lokale Verarbeitung &mdash; keine Daten verlassen Ihren Rechner</p>
+        </footer>
+    </div>
+
+    <script>
+    (function() {
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('file-input');
+        const fileList = document.getElementById('file-list');
+        const submitBtn = document.getElementById('submit-btn');
+
+        dropzone.addEventListener('click', function() { fileInput.click(); });
+
+        dropzone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+
+        dropzone.addEventListener('dragleave', function() {
+            dropzone.classList.remove('dragover');
+        });
+
+        dropzone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            fileInput.files = e.dataTransfer.files;
+            updateFileList();
+        });
+
+        fileInput.addEventListener('change', updateFileList);
+
+        function updateFileList() {
+            fileList.innerHTML = '';
+            var files = fileInput.files;
+            if (files.length === 0) {
+                submitBtn.disabled = true;
+                return;
+            }
+            submitBtn.disabled = false;
+            var totalSize = 0;
+            for (var i = 0; i < files.length; i++) {
+                var f = files[i];
+                totalSize += f.size;
+                var item = document.createElement('div');
+                item.className = 'file-item';
+                item.innerHTML = '<span class="file-name">' + escapeHtml(f.name) + '</span><span class="file-size">' + formatSize(f.size) + '</span>';
+                fileList.appendChild(item);
+            }
+            var total = document.createElement('div');
+            total.className = 'file-total';
+            total.textContent = files.length + ' Datei' + (files.length > 1 ? 'en' : '') + ' (' + formatSize(totalSize) + ')';
+            fileList.appendChild(total);
+        }
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function escapeHtml(str) {
+            var div = document.createElement('div');
+            div.appendChild(document.createTextNode(str));
+            return div.innerHTML;
+        }
+    })();
+    </script>
+</body>
+</html>

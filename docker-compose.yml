@@ -1,0 +1,46 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data
+      - ./app:/app/app
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - OLLAMA_HOST=http://host.docker.internal:11434
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: ["gunicorn", "-w", "2", "-b", "0.0.0.0:5000", "--timeout", "600", "app:create_app()"]
+
+  worker:
+    build: .
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - OLLAMA_HOST=http://host.docker.internal:11434
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: ["rq", "worker", "--url", "redis://redis:6379", "chunker-jobs"]
+
+volumes:
+  redis_data:

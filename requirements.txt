@@ -1,0 +1,11 @@
+flask==3.1.0
+gunicorn==23.0.0
+rq==2.3.1
+redis==5.2.1
+PyMuPDF==1.25.3
+pdfplumber==0.11.4
+python-docx==1.1.2
+openpyxl==3.1.5
+Pillow==11.1.0
+pytesseract==0.3.13
+ollama==0.4.7
