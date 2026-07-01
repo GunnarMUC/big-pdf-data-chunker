@@ -7,6 +7,7 @@ from redis import Redis
 from rq import Queue
 
 from app.models import generate_job_id
+from app.check import run_all_checks
 
 bp = Blueprint("main", __name__)
 
@@ -101,3 +102,28 @@ def download(job_id):
         download_name=f"Nebenkosten_Chunks_{job_id}.zip",
         mimetype="application/zip",
     )
+
+
+@bp.route("/health")
+def health():
+    checks = run_all_checks(
+        redis_url=current_app.config["REDIS_URL"],
+        ollama_host=current_app.config["OLLAMA_HOST"],
+        ollama_model=current_app.config["OLLAMA_MODEL"],
+        data_folders=[
+            current_app.config["UPLOAD_FOLDER"],
+            current_app.config["OUTPUT_FOLDER"],
+            current_app.config["OCR_CACHE_FOLDER"],
+        ],
+    )
+
+    overall = all(
+        c.get("status") != "error"
+        for c in checks["checks"].values()
+    )
+    checks["overall_status"] = "ok" if overall else "degraded"
+
+    if request.args.get("format") == "json":
+        return checks
+
+    return render_template("health.html", checks=checks)

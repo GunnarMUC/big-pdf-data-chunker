@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System-Check &mdash; Big PDF Data Chunker</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .health-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        .health-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            box-shadow: var(--shadow);
+        }
+        .health-card h3 {
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .detail {
+            font-size: 0.85rem;
+            line-height: 1.7;
+        }
+        .detail-row {
+            display: flex;
+            gap: 0.4rem;
+            align-items: baseline;
+        }
+        .detail-label { color: var(--text); font-weight: 600; }
+        .detail-value { color: var(--text-muted); }
+        .sub-item { margin-left: 0.5rem; padding: 0.15rem 0; }
+        .badge {
+            display: inline-block;
+            padding: 0.1rem 0.45rem;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .badge-ok { background: #dcfce7; color: #166534; }
+        .badge-warn { background: #fef3c7; color: #92400e; }
+        .badge-err { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>System-Check</h1>
+            {% set ns = namespace(ok=0, warn=0, err=0) %}
+            {% for c in checks.checks.values() %}
+                {% if c.status == "ok" %}{% set ns.ok = ns.ok + 1 %}
+                {% elif c.status == "warning" %}{% set ns.warn = ns.warn + 1 %}
+                {% else %}{% set ns.err = ns.err + 1 %}
+                {% endif %}
+            {% endfor %}
+            <p>{{ ns.ok }} OK &middot; {{ ns.warn }} Warnungen &middot; {{ ns.err }} Fehler &middot; <a href="/health?format=json">JSON</a></p>
+        </header>
+
+        <div class="health-grid">
+            {% for name, check in checks.checks.items() %}
+            <div class="health-card">
+                <h3>
+                    {% if check.status == "ok" %}✅{% elif check.status == "warning" %}⚠️{% else %}❌{% endif %}
+                    {{ name | replace("_", " ") | title }}
+                    <span class="badge {% if check.status == 'ok' %}badge-ok{% elif check.status == 'warning' %}badge-warn{% else %}badge-err{% endif %}">{{ check.status }}</span>
+                </h3>
+                <div class="detail">
+                    {% for key, val in check.items() %}
+                        {% if key != "status" and key != "folders" and key != "packages" %}
+                            {% if val is mapping %}
+                                {% for subkey, subval in val.items() %}
+                                <div class="sub-item">
+                                    <span class="detail-label">{{ subkey }}:</span>
+                                    <span class="detail-value">{{ subval }}</span>
+                                </div>
+                                {% endfor %}
+                            {% elif val is iterable and val is not string %}
+                                <div><span class="detail-label">{{ key }}:</span> {{ val | join(", ") }}</div>
+                            {% else %}
+                                <div><span class="detail-label">{{ key }}:</span> <span class="detail-value">{{ val }}</span></div>
+                            {% endif %}
+                        {% endif %}
+                        {% if key == "folders" or key == "packages" %}
+                            {% for subkey, subval in val.items() %}
+                                <div class="sub-item">
+                                    {% if subval.status == "ok" %}✅{% elif subval.status == "warning" %}⚠️{% else %}❌{% endif %}
+                                    <span class="detail-label">{{ subkey }}:</span>
+                                    <span class="detail-value">
+                                        {{ subval.error or "" }}
+                                        {{ subval.version or "" }}
+                                        {% if subval.free_gb %}{{ subval.free_gb }} GB{% endif %}
+                                        {% if subval.writable is defined %}beschreibbar{% endif %}
+                                    </span>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <p style="text-align:center;">
+            <a href="/">Zurück zur App</a>
+        </p>
+    </div>
+</body>
+</html>
