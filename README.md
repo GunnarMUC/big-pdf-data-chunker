@@ -175,6 +175,23 @@ Drag & drop your documents. The app processes them asynchronously with live prog
 | LLM (optional) | Ollama (Qwen 2.5 14B, Llama 3.1, Mistral) |
 | Container | Docker + Docker Compose |
 
+## Diagnostics
+
+The app includes a built-in system health check that validates all dependencies at startup or on demand:
+
+```bash
+# CLI check (from the container or host)
+python -m app.check
+
+# Web dashboard (visual, real-time)
+open http://localhost:5000/health
+
+# JSON API (for scripts / monitoring)
+curl http://localhost:5000/health?format=json
+```
+
+**Checks performed:** Redis (queue), Ollama (LLM fallback), Tesseract + German language pack, ocrmypdf, disk space and write permissions, all Python package dependencies. Each check has a 3-5 second timeout — nothing blocks startup.
+
 ## Configuration
 
 | Variable | Default | Description |
