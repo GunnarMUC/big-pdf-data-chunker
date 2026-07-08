@@ -1,3 +1,5 @@
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue)](LICENSE)n
+
 # Big PDF Data Chunker
 
 **Pre-process multi-format business documents into clean, structured chunks optimized for local LLM consumption.**
